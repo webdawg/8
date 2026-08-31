@@ -763,8 +763,8 @@
   const chainR = { x: 0, scrollY: 0, wX: 0.22, wY: 0.42, sat: 2.4, baseSpeed: 24, driveSpeed: 180, rxWide: 1.5, rxNarrow: 0.7 };
 
   function drawDarkMatterChains(dt) {
-    chainL.x = centerX - 8;
-    chainR.x = centerX + 8;
+    chainL.x = centerX - 32;
+    chainR.x = centerX + 32;
 
     [[chainL, leftManifold, 258], [chainR, rightManifold, 285]].forEach(([chain, m, hue]) => {
       const sig = m.velX * chain.wX + m.velY * chain.wY;
