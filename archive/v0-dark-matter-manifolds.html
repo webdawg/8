@@ -78,10 +78,6 @@
     return [x2, y1, z2];
   }
 
-  // global slow-down knob: every animated element reads scaled time (see
-  // frame()) rather than raw elapsed time, so the whole simulation eases
-  const TIME_SCALE = 0.35;
-
   const FOCAL = 620;
   const CAM_Z = 520;
   function project(x, y, z) {
@@ -121,11 +117,10 @@
     );
   }
 
-  // ---- the Contour Flow ----
-  // energy content living ON the right manifold's surface: lines that trace
-  // the gradient field of the manifold's own warp, so their vectors keep
-  // changing as they move forward across the curvature. The left manifold's
-  // content is the Ribbon Leg Field drawn further down instead. See GLOSSARY.md.
+  // ---- energy content living ON the right manifold's surface: lines that
+  // trace the gradient field of the manifold's own warp, so their vectors
+  // keep changing as they move forward across the curvature. The left
+  // manifold's content is the legs shape drawn further down instead. ----
   const STREAMER_COUNT = 42;
   const TRAIL_LEN = 11;
   function spawnStreamer() {
@@ -133,7 +128,6 @@
   }
   rightManifold.streamers = Array.from({ length: STREAMER_COUNT }, spawnStreamer);
 
-  // draws the Left Manifold or the Right Manifold (m.side). See GLOSSARY.md.
   function drawManifold(m, t) {
     const dim = halfDim();
     const planeW = dim * 0.62;
@@ -206,11 +200,8 @@
   function drawEnergyFlow(m, t, geom) {
     const { planeW, planeH, amp, anchorX, anchorY, angleX, angleY, softness } = geom;
     const eps = 0.01;
-    // dt is a per-frame constant (not derived from t), so it needs its own
-    // explicit TIME_SCALE cut, plus an extra reduction on top — this is the
-    // object called out as still too fast
-    const dt = 0.016 * TIME_SCALE;
-    const speed = 0.18;
+    const dt = 0.016;
+    const speed = 0.6;
 
     for (const s of m.streamers) {
       // flow perpendicular to the warp's gradient — energy following the
@@ -274,8 +265,7 @@
     ctx.shadowBlur = 0;
   }
 
-  // ---- the Afterbang Drips ----
-  // Dark Matter's visualization: the thin layer between the fields. See GLOSSARY.md.
+  // ---- dark matter drips (the thin layer between the fields) ----
   const DRIP_COUNT = 160;
   const drips = [];
   function spawnDrip(atTop) {
@@ -294,7 +284,7 @@
   function drawDrips(t) {
     for (const d of drips) {
       const prevY = d.y;
-      d.y += d.vy * TIME_SCALE;
+      d.y += d.vy;
       const jitter = noise1D(d.y * 0.02 + t * 0.3, d.jseed) * 6;
       const x = d.x + jitter;
 
@@ -349,11 +339,10 @@
     };
   }
 
-  // ---- the Ribbon Leg Field ----
   // content living INSIDE the left manifold: two tube-shaped ribbons that
   // share a hip, splayed apart so they cross — sized to the plane itself and
   // carried by its own anchor/rotation, so they read as part of its surface
-  // rather than a separate floating object. See GLOSSARY.md.
+  // rather than a separate floating object
   const LEG_DEFS = [
     { angle1: Math.PI - 0.4, angle2: Math.PI - 0.85, bendFrac: 0.55, yFrac: 0.06, lengthFrac: 0.42, radiusFrac: 0.03, hue: 250 },
     { angle1: -0.75, angle2: 0.1, bendFrac: 0.5, yFrac: -0.14, lengthFrac: 0.38, radiusFrac: 0.026, hue: 275 }
@@ -361,7 +350,6 @@
   const LEG_TUBE_SEGS = 10;
   const LEG_LENGTH_SEGS = 16;
 
-  // draws the Ribbon Leg Field onto the manifold `m`
   function drawLegsInside(m, t, geom) {
     const { planeW, planeH, anchorX, anchorY, angleX, angleY } = geom;
     const scale = Math.min(planeW, planeH);
@@ -478,7 +466,7 @@
   let start = null;
   function frame(ts) {
     if (start === null) start = ts;
-    const t = (ts - start) / 1000 * TIME_SCALE;
+    const t = (ts - start) / 1000;
 
     ctx.fillStyle = 'rgba(5, 2, 10, 0.18)';
     ctx.fillRect(0, 0, W, H);
