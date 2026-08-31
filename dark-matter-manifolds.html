@@ -117,15 +117,15 @@
     );
   }
 
-  // ---- energy content living ON the manifold surface: lines that trace the
-  // gradient field of the manifold's own warp, so their vectors keep
-  // changing as they move forward across the curvature ----
+  // ---- energy content living ON the right manifold's surface: lines that
+  // trace the gradient field of the manifold's own warp, so their vectors
+  // keep changing as they move forward across the curvature. The left
+  // manifold's content is the legs shape drawn further down instead. ----
   const STREAMER_COUNT = 42;
   const TRAIL_LEN = 11;
   function spawnStreamer() {
     return { pu: Math.random(), pv: Math.random(), trail: [] };
   }
-  leftManifold.streamers = Array.from({ length: STREAMER_COUNT }, spawnStreamer);
   rightManifold.streamers = Array.from({ length: STREAMER_COUNT }, spawnStreamer);
 
   function drawManifold(m, t) {
@@ -190,14 +190,18 @@
       strokeRow(col, m);
     }
 
-    drawEnergyFlow(m, t, { planeW, planeH, amp, anchorX, anchorY, angleX, angleY, softness });
+    if (m.side === 'left') {
+      drawLegsInside(m, t, { planeW, planeH, anchorX, anchorY, angleX, angleY });
+    } else {
+      drawEnergyFlow(m, t, { planeW, planeH, amp, anchorX, anchorY, angleX, angleY, softness });
+    }
   }
 
   function drawEnergyFlow(m, t, geom) {
     const { planeW, planeH, amp, anchorX, anchorY, angleX, angleY, softness } = geom;
     const eps = 0.01;
     const dt = 0.016;
-    const speed = 4.5;
+    const speed = 0.6;
 
     for (const s of m.streamers) {
       // flow perpendicular to the warp's gradient — energy following the
@@ -335,72 +339,41 @@
     };
   }
 
-  const legsField = {
-    rotSeedX: Math.random() * 10,
-    rotSeedY: Math.random() * 10,
-    spinDir: 1,
-    legs: [
-      // reaches left, into the cyan manifold
-      { angle1: Math.PI - 0.18, angle2: Math.PI - 0.58, bendFrac: 0.55, yOffset: 0, lengthFrac: 0.34, radiusFrac: 0.018, hue: 250, dir: -1 },
-      // reaches right, into the magenta manifold — foot rests higher than the left leg's
-      { angle1: -0.42, angle2: 0.02, bendFrac: 0.5, yOffset: -0.02, lengthFrac: 0.34, radiusFrac: 0.015, hue: 275, dir: 1 }
-    ],
-    tubeSegs: 10,
-    lengthSegs: 16
-  };
+  // content living INSIDE the left manifold: two tube-shaped ribbons that
+  // share a hip, splayed apart so they cross — sized to the plane itself and
+  // carried by its own anchor/rotation, so they read as part of its surface
+  // rather than a separate floating object
+  const LEG_DEFS = [
+    { angle1: Math.PI - 0.4, angle2: Math.PI - 0.85, bendFrac: 0.55, yFrac: 0.06, lengthFrac: 0.42, radiusFrac: 0.03, hue: 250 },
+    { angle1: -0.75, angle2: 0.1, bendFrac: 0.5, yFrac: -0.14, lengthFrac: 0.38, radiusFrac: 0.026, hue: 275 }
+  ];
+  const LEG_TUBE_SEGS = 10;
+  const LEG_LENGTH_SEGS = 16;
 
-  function drawLegsField(t) {
-    const dim = halfDim();
-    const anchorX = centerX;
-    const anchorY = H * 0.6 + Math.sin(t * 0.3) * dim * 0.01;
-
-    // same motion style as the side manifolds: a gentle tilt wobble on X,
-    // plus a continuous tumbling spin on Y rather than a small back-and-forth
-    const angleX = 0.35 * Math.sin(t * 0.12 + legsField.rotSeedX) + 0.15;
-    const angleY = legsField.spinDir * (t * 0.08 + legsField.rotSeedY);
-
+  function drawLegsInside(m, t, geom) {
+    const { planeW, planeH, anchorX, anchorY, angleX, angleY } = geom;
+    const scale = Math.min(planeW, planeH);
     const hipPoints = [];
 
-    for (const legDef of legsField.legs) {
-      // reach past the gap boundary on this leg's side so it visibly
-      // touches the manifold it points toward
-      const reach = gapHalf + legDef.lengthFrac * dim;
+    for (const legDef of LEG_DEFS) {
       const leg = {
         angle1: legDef.angle1,
         angle2: legDef.angle2,
         bendFrac: legDef.bendFrac,
-        yOffset: legDef.yOffset * dim,
-        length: reach
+        yOffset: legDef.yFrac * scale,
+        length: legDef.lengthFrac * scale
       };
-      const radius = legDef.radiusFrac * dim;
-      const boundary = legDef.dir < 0 ? leftBoundary : rightBoundary;
-
-      // the tumbling Y spin foreshortens the tube's horizontal reach for large
-      // stretches of its rotation, so raw 3D length alone can't guarantee it
-      // still touches the boundary. Fix the foot to the boundary explicitly:
-      // measure where the untouched rotation places it, then stretch every
-      // point toward that correction in proportion to s (0 at the hip, full
-      // at the foot) so the link holds regardless of spin phase.
-      // The manifold's own strands wobble and often sit short of their
-      // asymptotic limit at any given instant, so grazing the boundary line
-      // isn't enough — push well past it (past the manifold's clamp
-      // softness zone) into the body where strands reliably are.
-      const overlap = gapHalf * 1.8;
-      const targetFootX = boundary + (legDef.dir < 0 ? -overlap : overlap);
-      const rawFoot = legPath(leg, 1);
-      const [rfx, rfy, rfz] = rotatePoint(rawFoot.x, rawFoot.y, 0, angleX, angleY);
-      const [rfpx] = project(rfx, rfy, rfz);
-      const deltaX = targetFootX - (anchorX + rfpx);
+      const radius = legDef.radiusFrac * scale;
 
       const ring = [];
-      for (let j = 0; j <= legsField.lengthSegs; j++) {
-        const s = j / legsField.lengthSegs;
+      for (let j = 0; j <= LEG_LENGTH_SEGS; j++) {
+        const s = j / LEG_LENGTH_SEGS;
         const c = legPath(leg, s);
         const nx = -Math.sin(c.tangent);
         const ny = Math.cos(c.tangent);
         const row = [];
-        for (let k = 0; k <= legsField.tubeSegs; k++) {
-          const phi = (k / legsField.tubeSegs) * Math.PI * 2;
+        for (let k = 0; k <= LEG_TUBE_SEGS; k++) {
+          const phi = (k / LEG_TUBE_SEGS) * Math.PI * 2;
           const rCos = Math.cos(phi) * radius;
           const rSin = Math.sin(phi) * radius;
           const lx = c.x + nx * rCos;
@@ -408,25 +381,25 @@
           const lz = rSin;
 
           const [rx, ry, rz] = rotatePoint(lx, ly, lz, angleX, angleY);
-          const [px, py, scale] = project(rx, ry, rz);
-          row.push([anchorX + px + deltaX * s, anchorY + py, scale]);
+          const [px, py, scaleP] = project(rx, ry, rz);
+          row.push([anchorX + px, anchorY + py, scaleP]);
         }
         ring.push(row);
       }
 
       // rings around the tube (cross-sections)
-      for (let j = 0; j <= legsField.lengthSegs; j++) {
+      for (let j = 0; j <= LEG_LENGTH_SEGS; j++) {
         ctx.beginPath();
-        for (let k = 0; k <= legsField.tubeSegs; k++) {
+        for (let k = 0; k <= LEG_TUBE_SEGS; k++) {
           const [sx, sy] = ring[j][k];
           if (k === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
         }
         strokeLeg(ring[j], legDef.hue);
       }
       // lines along the tube length
-      for (let k = 0; k <= legsField.tubeSegs; k++) {
+      for (let k = 0; k <= LEG_TUBE_SEGS; k++) {
         ctx.beginPath();
-        for (let j = 0; j <= legsField.lengthSegs; j++) {
+        for (let j = 0; j <= LEG_LENGTH_SEGS; j++) {
           const [sx, sy] = ring[j][k];
           if (j === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
         }
@@ -434,33 +407,10 @@
         strokeLeg(col, legDef.hue);
       }
 
-      // centerline (no tube radius) used both to mark the hip joint and to
-      // drive the field-connection tendrils below
-      const centerline = [];
-      for (let j = 0; j <= legsField.lengthSegs; j++) {
-        const s = j / legsField.lengthSegs;
-        const c = legPath(leg, s);
-        const [rx, ry, rz] = rotatePoint(c.x, c.y, 0, angleX, angleY);
-        const [px, py] = project(rx, ry, rz);
-        centerline.push([anchorX + px + deltaX * s, anchorY + py]);
-      }
-      hipPoints.push(centerline[0]);
-
-      // tendrils linking this leg back to the manifold it reaches toward;
-      // strength decays the further a point sits from that field
-      const fieldHue = legDef.dir < 0 ? leftManifold.hueBase : rightManifold.hueBase;
-      const decay = gapHalf * 2.2;
-      for (const [px, py] of centerline) {
-        const dist = Math.abs(px - boundary);
-        const strength = Math.exp(-dist / decay);
-        if (strength < 0.02) continue;
-        ctx.beginPath();
-        ctx.moveTo(px, py);
-        ctx.lineTo(boundary, py);
-        ctx.strokeStyle = `hsla(${fieldHue}, 85%, 75%, ${0.5 * strength})`;
-        ctx.lineWidth = 0.6 + strength * 0.8;
-        ctx.stroke();
-      }
+      // hip point (s = 0, radius = 0), used to join the two legs below
+      const [hrx, hry, hrz] = rotatePoint(0, leg.yOffset, 0, angleX, angleY);
+      const [hpx, hpy] = project(hrx, hry, hrz);
+      hipPoints.push([anchorX + hpx, anchorY + hpy]);
     }
 
     // join the two legs together at the hip, then cut a single wall line
@@ -486,7 +436,7 @@
       const len = Math.hypot(dx, dy) || 1;
       const nx = -dy / len;
       const ny = dx / len;
-      const wallHalf = Math.max(20, dim * 0.05);
+      const wallHalf = Math.max(14, scale * 0.07);
 
       ctx.beginPath();
       ctx.moveTo(midX - nx * wallHalf, midY - ny * wallHalf);
@@ -525,7 +475,6 @@
     drawDrips(t);
     drawManifold(leftManifold, t);
     drawManifold(rightManifold, t);
-    drawLegsField(t);
 
     requestAnimationFrame(frame);
   }
