@@ -133,8 +133,8 @@
     m.jitterSeed = Math.random() * 100;
     Object.assign(m, opts);
   }
-  initMotion(leftManifold, { springK: 1.4, dampC: 1.9, jitterAccel: 0.05, coupleFromOther: 0.55 });
-  initMotion(rightManifold, { springK: 0.9, dampC: 1.3, jitterAccel: 0.08, coupleFromOther: 0.3 });
+  initMotion(leftManifold, { springK: 0.9, dampC: 1.1, jitterAccel: 0.05, coupleFromOther: 1.1 });
+  initMotion(rightManifold, { springK: 0.6, dampC: 0.8, jitterAccel: 0.08, coupleFromOther: 0.65 });
 
   const IMPULSE_SCALE = 1.4;
 
@@ -623,7 +623,11 @@
     ctx.fillStyle = 'rgba(5, 2, 10, 0.18)';
     ctx.fillRect(0, 0, W, H);
 
-    updateCoupledMotion(t, 0.016 * TIME_SCALE);
+    // this system runs at real-time speed regardless of TIME_SCALE — throttling
+    // it by the same factor that slows the ambient drift made a full second of
+    // dragging barely move the needle, since accel -> velocity -> angle is a
+    // double integration and TIME_SCALE was shrinking every step of it
+    updateCoupledMotion(t, 0.016);
 
     drawGapField();
     drawDrips(t);
