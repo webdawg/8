@@ -556,13 +556,13 @@
   // so the two rarely read as the same size, and only pin to the extremes
   // under a genuinely strong signal instead of routinely
   const CHAIN_LINKS = 9;
-  const chainL = { x: 0, history: new Array(CHAIN_LINKS).fill(0), wX: 0.5, wY: 0.12, sat: 0.5, reachFrac: 0.085 };
-  const chainR = { x: 0, history: new Array(CHAIN_LINKS).fill(0), wX: 0.22, wY: 0.42, sat: 0.75, reachFrac: 0.13 };
+  const chainL = { x: 0, history: new Array(CHAIN_LINKS).fill(0), wX: 0.5, wY: 0.12, sat: 0.5, reachFrac: 0.22 };
+  const chainR = { x: 0, history: new Array(CHAIN_LINKS).fill(0), wX: 0.22, wY: 0.42, sat: 0.75, reachFrac: 0.32 };
 
   function drawDarkMatterChains() {
     const y0 = H / 2;
-    chainL.x = centerX - 5;
-    chainR.x = centerX + 5;
+    chainL.x = centerX - 8;
+    chainR.x = centerX + 8;
 
     [[chainL, leftManifold, 258], [chainR, rightManifold, 285]].forEach(([chain, m, hue]) => {
       const sig = m.angX * chain.wX + m.angY * chain.wY;
@@ -574,17 +574,17 @@
       const pts = [y0, ...chain.history];
       ctx.beginPath();
       pts.forEach((y, i) => { if (i === 0) ctx.moveTo(chain.x, y); else ctx.lineTo(chain.x, y); });
-      ctx.strokeStyle = `hsla(${hue}, 55%, 78%, 0.5)`;
-      ctx.lineWidth = 1.4;
+      ctx.strokeStyle = `hsla(${hue}, 55%, 78%, 0.55)`;
+      ctx.lineWidth = 2.4;
       ctx.shadowColor = `hsla(${hue}, 70%, 85%, 0.6)`;
-      ctx.shadowBlur = 5;
+      ctx.shadowBlur = 7;
       ctx.stroke();
       ctx.shadowBlur = 0;
 
       pts.forEach((y) => {
         ctx.beginPath();
-        ctx.arc(chain.x, y, 2.2, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${hue}, 65%, 88%, 0.75)`;
+        ctx.arc(chain.x, y, 3.6, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${hue}, 65%, 88%, 0.8)`;
         ctx.fill();
       });
     });
