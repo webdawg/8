@@ -15,10 +15,12 @@ The mirror of the Left Manifold: same nature (a calculus manifold, flat plane cr
 ## Dark Matter (the middle)
 "The thin layer spread everywhere that separates the fields of the universe" — "an infinite field transformer with tensor flows to the infinite power." It fills the gap between the Left and Right Manifolds' boundaries, the space neither manifold can ever cross into.
 
+The Manifolds' boundary (leftBoundary/rightBoundary) is no longer its own small independent gap — it's defined as CHAIN_GAP_HALF plus a margin, i.e., just outside wherever the Dark Matter Chains currently sit. Widening the Chains' gap pushes both fields' clamp limit outward with it, so neither field can ever cross past the Chains, only approach them asymptotically like they already did the boundary itself.
+
 **Visualized as — the Afterbang Drips**: particles falling slowly through the gap, jittering sideways, with rare bright sparks flaring gold — "dripping pieces of cosmic after bang" caught in the layer between the two fields.
 
 ## The Tunnel
-Two separate wireframe passages, one reaching in from the Left Manifold and one from the Right — deliberately not connected. The split between them is exactly the same gap that separates the Dark Matter Chains (CHAIN_GAP_HALF), so widening one widens the other. Each segment is color-graded (cyan near the left, magenta near the right) and pinches narrower as it nears its open end. Their rotation is slow and independent of both fields, since the passage belongs to neither dimension.
+Two separate wireframe passages, one reaching in from the Left Manifold and one from the Right — deliberately not connected. Each segment spans the full Manifold boundary (which itself now sits outside the Chains), so each one's outer end already exits past the Chains on its own; the split between the two segments is its own small, fixed gap right at dead center, independent of the Chains' gap entirely. Each segment is color-graded (cyan near the left, magenta near the right) and pinches narrower as it nears its open end. Their rotation is slow and independent of both fields, since the passage belongs to neither dimension.
 
 **The Opening**: where the old single sealed Vortex membrane used to sit at a shared throat, each segment now ends in its own glowing violet rim instead — an open mouth, not a seal, since the Entanglement train has to pass straight through the gap between them. It still flares wider and brighter the more aligned the two fields currently are.
 
