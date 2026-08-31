@@ -245,6 +245,117 @@
     ctx.fillRect(leftBoundary, 0, rightBoundary - leftBoundary, H);
   }
 
+  // ---- field object: a tube-manifold shaped like two reclining legs,
+  // one bent knee resting higher than the other ----
+  function legPath(leg, s) {
+    const len1 = leg.length * leg.bendFrac;
+    const len2 = leg.length * (1 - leg.bendFrac);
+    if (s < leg.bendFrac) {
+      const ls = s / leg.bendFrac;
+      return {
+        x: Math.cos(leg.angle1) * len1 * ls,
+        y: leg.yOffset + Math.sin(leg.angle1) * len1 * ls,
+        tangent: leg.angle1
+      };
+    }
+    const ls2 = (s - leg.bendFrac) / (1 - leg.bendFrac);
+    const kneeX = Math.cos(leg.angle1) * len1;
+    const kneeY = leg.yOffset + Math.sin(leg.angle1) * len1;
+    return {
+      x: kneeX + Math.cos(leg.angle2) * len2 * ls2,
+      y: kneeY + Math.sin(leg.angle2) * len2 * ls2,
+      tangent: leg.angle2
+    };
+  }
+
+  const legsField = {
+    rotSeedX: Math.random() * 10,
+    rotSeedY: Math.random() * 10,
+    legs: [
+      // lower leg
+      { angle1: 0.18, angle2: 0.58, bendFrac: 0.55, yOffset: 0, lengthFrac: 0.17, radiusFrac: 0.018, hue: 250 },
+      // higher leg (bent knee raised)
+      { angle1: -0.42, angle2: 0.02, bendFrac: 0.5, yOffset: -0.02, lengthFrac: 0.145, radiusFrac: 0.015, hue: 275 }
+    ],
+    tubeSegs: 10,
+    lengthSegs: 16
+  };
+
+  function drawLegsField(t) {
+    const dim = halfDim();
+    const anchorX = centerX;
+    const anchorY = H * 0.6 + Math.sin(t * 0.3) * dim * 0.01;
+
+    const angleX = 0.25 * Math.sin(t * 0.1 + legsField.rotSeedX) + 0.1;
+    const angleY = 0.12 * Math.sin(t * 0.07 + legsField.rotSeedY);
+
+    for (const legDef of legsField.legs) {
+      const leg = {
+        angle1: legDef.angle1,
+        angle2: legDef.angle2,
+        bendFrac: legDef.bendFrac,
+        yOffset: legDef.yOffset * dim,
+        length: legDef.lengthFrac * dim
+      };
+      const radius = legDef.radiusFrac * dim;
+
+      const ring = [];
+      for (let j = 0; j <= legsField.lengthSegs; j++) {
+        const s = j / legsField.lengthSegs;
+        const c = legPath(leg, s);
+        const nx = -Math.sin(c.tangent);
+        const ny = Math.cos(c.tangent);
+        const row = [];
+        for (let k = 0; k <= legsField.tubeSegs; k++) {
+          const phi = (k / legsField.tubeSegs) * Math.PI * 2;
+          const rCos = Math.cos(phi) * radius;
+          const rSin = Math.sin(phi) * radius;
+          const lx = c.x + nx * rCos;
+          const ly = c.y + ny * rCos;
+          const lz = rSin;
+
+          const [rx, ry, rz] = rotatePoint(lx, ly, lz, angleX, angleY);
+          const [px, py, scale] = project(rx, ry, rz);
+          row.push([anchorX + px, anchorY + py, scale]);
+        }
+        ring.push(row);
+      }
+
+      // rings around the tube (cross-sections)
+      for (let j = 0; j <= legsField.lengthSegs; j++) {
+        ctx.beginPath();
+        for (let k = 0; k <= legsField.tubeSegs; k++) {
+          const [sx, sy] = ring[j][k];
+          if (k === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+        }
+        strokeLeg(ring[j], legDef.hue);
+      }
+      // lines along the tube length
+      for (let k = 0; k <= legsField.tubeSegs; k++) {
+        ctx.beginPath();
+        for (let j = 0; j <= legsField.lengthSegs; j++) {
+          const [sx, sy] = ring[j][k];
+          if (j === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+        }
+        const col = ring.map(row => row[k]);
+        strokeLeg(col, legDef.hue);
+      }
+    }
+  }
+
+  function strokeLeg(points, hue) {
+    let avgScale = 0;
+    for (const p of points) avgScale += p[2];
+    avgScale /= points.length;
+    const depthLight = Math.min(1, Math.max(0.1, (avgScale - 0.5) * 2.2));
+    ctx.strokeStyle = `hsla(${hue}, 25%, ${75 + depthLight * 15}%, ${0.12 + depthLight * 0.35})`;
+    ctx.lineWidth = 0.7 + depthLight * 0.7;
+    ctx.shadowColor = `hsla(${hue}, 40%, 90%, 0.4)`;
+    ctx.shadowBlur = 3 * depthLight;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
   let start = null;
   function frame(ts) {
     if (start === null) start = ts;
@@ -257,6 +368,7 @@
     drawDrips(t);
     drawManifold(leftManifold, t);
     drawManifold(rightManifold, t);
+    drawLegsField(t);
 
     requestAnimationFrame(frame);
   }
