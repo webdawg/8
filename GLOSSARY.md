@@ -16,3 +16,8 @@ The mirror of the Left Manifold: same nature (a calculus manifold, flat plane cr
 "The thin layer spread everywhere that separates the fields of the universe" — "an infinite field transformer with tensor flows to the infinite power." It fills the gap between the Left and Right Manifolds' boundaries, the space neither manifold can ever cross into.
 
 **Visualized as — the Afterbang Drips**: particles falling slowly through the gap, jittering sideways, with rare bright sparks flaring gold — "dripping pieces of cosmic after bang" caught in the layer between the two fields.
+
+## The Tunnel
+A passage across the gap connecting the Left Manifold to the Right Manifold — a wireframe tube, color-graded from cyan to magenta along its length, pinched to a narrow throat exactly at its center. Its own rotation is slow and independent of both fields, since it belongs to neither dimension.
+
+**The divider**: at the Tunnel's throat sits a glowing violet membrane — Dark Matter made explicit as a physical seal within the passage, "a clear divider," the point neither field's motion can ever push past.
