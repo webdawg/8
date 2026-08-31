@@ -306,6 +306,20 @@
         length: reach
       };
       const radius = legDef.radiusFrac * dim;
+      const boundary = legDef.dir < 0 ? leftBoundary : rightBoundary;
+
+      // the tumbling Y spin foreshortens the tube's horizontal reach for large
+      // stretches of its rotation, so raw 3D length alone can't guarantee it
+      // still touches the boundary. Fix the foot to the boundary explicitly:
+      // measure where the untouched rotation places it, then stretch every
+      // point toward that correction in proportion to s (0 at the hip, full
+      // at the foot) so the link holds regardless of spin phase.
+      const overlap = dim * 0.05;
+      const targetFootX = boundary + (legDef.dir < 0 ? -overlap : overlap);
+      const rawFoot = legPath(leg, 1);
+      const [rfx, rfy, rfz] = rotatePoint(rawFoot.x, rawFoot.y, 0, angleX, angleY);
+      const [rfpx] = project(rfx, rfy, rfz);
+      const deltaX = targetFootX - (anchorX + rfpx);
 
       const ring = [];
       for (let j = 0; j <= legsField.lengthSegs; j++) {
@@ -324,7 +338,7 @@
 
           const [rx, ry, rz] = rotatePoint(lx, ly, lz, angleX, angleY);
           const [px, py, scale] = project(rx, ry, rz);
-          row.push([anchorX + px, anchorY + py, scale]);
+          row.push([anchorX + px + deltaX * s, anchorY + py, scale]);
         }
         ring.push(row);
       }
@@ -357,13 +371,12 @@
         const c = legPath(leg, s);
         const [rx, ry, rz] = rotatePoint(c.x, c.y, 0, angleX, angleY);
         const [px, py] = project(rx, ry, rz);
-        centerline.push([anchorX + px, anchorY + py]);
+        centerline.push([anchorX + px + deltaX * s, anchorY + py]);
       }
       hipPoints.push(centerline[0]);
 
       // tendrils linking this leg back to the manifold it reaches toward;
       // strength decays the further a point sits from that field
-      const boundary = legDef.dir < 0 ? leftBoundary : rightBoundary;
       const fieldHue = legDef.dir < 0 ? leftManifold.hueBase : rightManifold.hueBase;
       const decay = gapHalf * 2.2;
       for (const [px, py] of centerline) {
