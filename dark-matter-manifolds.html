@@ -314,7 +314,11 @@
       // measure where the untouched rotation places it, then stretch every
       // point toward that correction in proportion to s (0 at the hip, full
       // at the foot) so the link holds regardless of spin phase.
-      const overlap = dim * 0.05;
+      // The manifold's own strands wobble and often sit short of their
+      // asymptotic limit at any given instant, so grazing the boundary line
+      // isn't enough — push well past it (past the manifold's clamp
+      // softness zone) into the body where strands reliably are.
+      const overlap = gapHalf * 1.8;
       const targetFootX = boundary + (legDef.dir < 0 ? -overlap : overlap);
       const rawFoot = legPath(leg, 1);
       const [rfx, rfy, rfz] = rotatePoint(rawFoot.x, rawFoot.y, 0, angleX, angleY);
