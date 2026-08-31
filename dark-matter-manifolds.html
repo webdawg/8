@@ -117,6 +117,17 @@
     );
   }
 
+  // ---- energy content living ON the manifold surface: lines that trace the
+  // gradient field of the manifold's own warp, so their vectors keep
+  // changing as they move forward across the curvature ----
+  const STREAMER_COUNT = 42;
+  const TRAIL_LEN = 11;
+  function spawnStreamer() {
+    return { pu: Math.random(), pv: Math.random(), trail: [] };
+  }
+  leftManifold.streamers = Array.from({ length: STREAMER_COUNT }, spawnStreamer);
+  rightManifold.streamers = Array.from({ length: STREAMER_COUNT }, spawnStreamer);
+
   function drawManifold(m, t) {
     const dim = halfDim();
     const planeW = dim * 0.62;
@@ -177,6 +188,62 @@
       }
       const col = pts.map(row => row[i]);
       strokeRow(col, m);
+    }
+
+    drawEnergyFlow(m, t, { planeW, planeH, amp, anchorX, anchorY, angleX, angleY, softness });
+  }
+
+  function drawEnergyFlow(m, t, geom) {
+    const { planeW, planeH, amp, anchorX, anchorY, angleX, angleY, softness } = geom;
+    const eps = 0.01;
+    const dt = 0.016;
+    const speed = 4.5;
+
+    for (const s of m.streamers) {
+      // flow perpendicular to the warp's gradient — energy following the
+      // manifold's own contour lines rather than pooling at its extrema
+      const w0 = warpZ(s.pu * 3.2, s.pv * 3.2, t, m.seed);
+      const wU = warpZ((s.pu + eps) * 3.2, s.pv * 3.2, t, m.seed);
+      const wV = warpZ(s.pu * 3.2, (s.pv + eps) * 3.2, t, m.seed);
+      const gradU = (wU - w0) / eps;
+      const gradV = (wV - w0) / eps;
+
+      s.pu += -gradV * speed * dt;
+      s.pv += gradU * speed * dt;
+
+      s.trail.push([s.pu, s.pv]);
+      if (s.trail.length > TRAIL_LEN) s.trail.shift();
+
+      if (s.pu < -0.15 || s.pu > 1.15 || s.pv < -0.15 || s.pv > 1.15) {
+        Object.assign(s, spawnStreamer());
+        continue;
+      }
+
+      const screenTrail = s.trail.map(([pu, pv]) => {
+        const u = (pu - 0.5) * planeW;
+        const v = (pv - 0.5) * planeH;
+        const w = warpZ(pu * 3.2, pv * 3.2, t, m.seed) * amp;
+        const [rx, ry, rz] = rotatePoint(u, v, w, angleX, angleY);
+        const [px, py, scale] = project(rx, ry, rz);
+        let sx = anchorX + px;
+        sx = m.side === 'left'
+          ? softClampMax(sx, leftBoundary, softness)
+          : softClampMin(sx, rightBoundary, softness);
+        return [sx, anchorY + py, scale];
+      });
+
+      ctx.beginPath();
+      screenTrail.forEach(([sx, sy], idx) => {
+        if (idx === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+      });
+      const [, , tailScale] = screenTrail[screenTrail.length - 1];
+      const depthLight = Math.min(1, Math.max(0.15, (tailScale - 0.5) * 2.2));
+      ctx.strokeStyle = `hsla(${m.hueBase + 20}, 40%, 92%, ${0.35 + depthLight * 0.35})`;
+      ctx.lineWidth = 1.1 + depthLight * 0.6;
+      ctx.shadowColor = 'hsla(0, 0%, 100%, 0.6)';
+      ctx.shadowBlur = 3 * depthLight;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
     }
   }
 
