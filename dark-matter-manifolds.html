@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dark Matter Manifolds</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #05020a;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(function () {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  let W, H, DPR, centerX, gapHalf, leftBoundary, rightBoundary;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    centerX = W / 2;
+    gapHalf = Math.max(40, W * 0.055);
+    leftBoundary = centerX - gapHalf;
+    rightBoundary = centerX + gapHalf;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---- organic multi-frequency noise (sum of sines, evolves with time) ----
+  function noise1D(x, seed) {
+    return (
+      Math.sin(x * 1.31 + seed) +
+      0.5 * Math.sin(x * 2.71 + seed * 1.7) +
+      0.25 * Math.sin(x * 5.13 + seed * 0.31)
+    ) / 1.75;
+  }
+
+  // asymptotically approach `limit` from below, never reach it
+  function softClampMax(x, limit, softness) {
+    if (x <= limit - softness) return x;
+    const t = (x - (limit - softness)) / softness;
+    const eased = 1 - Math.exp(-Math.max(t, 0));
+    return (limit - softness) + eased * softness;
+  }
+  // asymptotically approach `limit` from above, never reach it
+  function softClampMin(x, limit, softness) {
+    if (x >= limit + softness) return x;
+    const t = ((limit + softness) - x) / softness;
+    const eased = 1 - Math.exp(-Math.max(t, 0));
+    return (limit + softness) - eased * softness;
+  }
+
+  // ---- manifold strands ----
+  const STRAND_COUNT = 11;
+  const leftStrands = [];
+  const rightStrands = [];
+  for (let i = 0; i < STRAND_COUNT; i++) {
+    leftStrands.push({
+      seed: i * 0.83 + 1.1,
+      speed: 0.14 + Math.random() * 0.08,
+      amp: 60 + Math.random() * 90,
+      baseFrac: (i + 0.5) / STRAND_COUNT,
+      hue: 190 + Math.random() * 30
+    });
+    rightStrands.push({
+      seed: i * 0.97 + 4.4,
+      speed: 0.14 + Math.random() * 0.08,
+      amp: 60 + Math.random() * 90,
+      baseFrac: (i + 0.5) / STRAND_COUNT,
+      hue: 320 + Math.random() * 35
+    });
+  }
+
+  function drawManifold(strand, side, t) {
+    const step = 8;
+    const softness = gapHalf * 0.9;
+    ctx.beginPath();
+    let started = false;
+    for (let y = -20; y <= H + 20; y += step) {
+      const n = noise1D(y * 0.006 + t * strand.speed, strand.seed);
+      const baseX =
+        side === 'left'
+          ? strand.baseFrac * (leftBoundary - softness * 1.3)
+          : rightBoundary + softness * 1.3 + strand.baseFrac * (W - (rightBoundary + softness * 1.3));
+      let x = baseX + n * strand.amp;
+      x = side === 'left'
+        ? softClampMax(x, leftBoundary, softness)
+        : softClampMin(x, rightBoundary, softness);
+      if (!started) {
+        ctx.moveTo(x, y);
+        started = true;
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, `hsla(${strand.hue}, 90%, 65%, 0.05)`);
+    grad.addColorStop(0.5, `hsla(${strand.hue}, 95%, 68%, 0.55)`);
+    grad.addColorStop(1, `hsla(${strand.hue}, 90%, 65%, 0.05)`);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 1.4;
+    ctx.shadowColor = `hsla(${strand.hue}, 100%, 70%, 0.6)`;
+    ctx.shadowBlur = 6;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  // ---- dark matter drips (the thin layer between the fields) ----
+  const DRIP_COUNT = 160;
+  const drips = [];
+  function spawnDrip(atTop) {
+    return {
+      x: leftBoundary + Math.random() * (rightBoundary - leftBoundary),
+      y: atTop ? -Math.random() * H : Math.random() * H,
+      vy: 0.25 + Math.random() * 0.9,
+      jseed: Math.random() * 1000,
+      len: 4 + Math.random() * 10,
+      alpha: 0.15 + Math.random() * 0.4,
+      spark: 0
+    };
+  }
+  for (let i = 0; i < DRIP_COUNT; i++) drips.push(spawnDrip(false));
+
+  function drawDrips(t) {
+    for (const d of drips) {
+      const prevY = d.y;
+      d.y += d.vy;
+      const jitter = noise1D(d.y * 0.02 + t * 0.3, d.jseed) * 6;
+      const x = d.x + jitter;
+
+      if (Math.random() < 0.0025) d.spark = 1;
+      d.spark *= 0.92;
+
+      ctx.beginPath();
+      ctx.moveTo(x, prevY);
+      ctx.lineTo(x, d.y + d.len);
+      const baseAlpha = d.alpha + d.spark * 0.6;
+      ctx.strokeStyle = d.spark > 0.05
+        ? `rgba(255, 220, 170, ${Math.min(1, baseAlpha)})`
+        : `rgba(150, 110, 190, ${baseAlpha})`;
+      ctx.lineWidth = d.spark > 0.05 ? 1.6 : 1;
+      ctx.stroke();
+
+      if (d.y - d.len > H) {
+        Object.assign(d, spawnDrip(true));
+      }
+    }
+  }
+
+  function drawGapField() {
+    const grad = ctx.createLinearGradient(leftBoundary, 0, rightBoundary, 0);
+    grad.addColorStop(0, 'rgba(90, 40, 120, 0)');
+    grad.addColorStop(0.5, 'rgba(120, 60, 160, 0.05)');
+    grad.addColorStop(1, 'rgba(90, 40, 120, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(leftBoundary, 0, rightBoundary - leftBoundary, H);
+  }
+
+  let start = null;
+  function frame(ts) {
+    if (start === null) start = ts;
+    const t = (ts - start) / 1000;
+
+    ctx.fillStyle = 'rgba(5, 2, 10, 0.16)';
+    ctx.fillRect(0, 0, W, H);
+
+    drawGapField();
+    drawDrips(t);
+    for (const s of leftStrands) drawManifold(s, 'left', t);
+    for (const s of rightStrands) drawManifold(s, 'right', t);
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
