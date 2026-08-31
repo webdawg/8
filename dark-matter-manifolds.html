@@ -286,8 +286,10 @@
     const anchorX = centerX;
     const anchorY = H * 0.6 + Math.sin(t * 0.3) * dim * 0.01;
 
+    // rotated 90 degrees on Y so the leg-plane's normal runs perpendicular
+    // to the side manifolds' plane normal, instead of sharing their orientation
     const angleX = 0.25 * Math.sin(t * 0.1 + legsField.rotSeedX) + 0.1;
-    const angleY = 0.12 * Math.sin(t * 0.07 + legsField.rotSeedY);
+    const angleY = Math.PI / 2 + 0.12 * Math.sin(t * 0.07 + legsField.rotSeedY);
 
     for (const legDef of legsField.legs) {
       const leg = {
