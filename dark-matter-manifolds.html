@@ -572,21 +572,30 @@
       chain.history.shift();
 
       const pts = [y0, ...chain.history];
-      ctx.beginPath();
-      pts.forEach((y, i) => { if (i === 0) ctx.moveTo(chain.x, y); else ctx.lineTo(chain.x, y); });
-      ctx.strokeStyle = `hsla(${hue}, 55%, 78%, 0.55)`;
-      ctx.lineWidth = 2.4;
-      ctx.shadowColor = `hsla(${hue}, 70%, 85%, 0.6)`;
-      ctx.shadowBlur = 7;
-      ctx.stroke();
-      ctx.shadowBlur = 0;
 
-      pts.forEach((y) => {
+      // actual chain links: alternating-width ovals stacked along the fixed
+      // x, overlapping slightly like real interlocked chain segments — the
+      // width alternation is what reads as a twisted metal link rather than
+      // a line with dots on it
+      for (let i = 0; i < pts.length - 1; i++) {
+        const yA = pts[i];
+        const yB = pts[i + 1];
+        const midY = (yA + yB) / 2;
+        const segLen = Math.abs(yB - yA);
+        const ry = Math.max(segLen / 2 + 2, 4);
+        const rx = i % 2 === 0 ? 5.5 : 3;
+
         ctx.beginPath();
-        ctx.arc(chain.x, y, 3.6, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${hue}, 65%, 88%, 0.8)`;
+        ctx.ellipse(chain.x, midY, rx, ry, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${hue}, 40%, 55%, 0.28)`;
         ctx.fill();
-      });
+        ctx.strokeStyle = `hsla(${hue}, 65%, 85%, 0.85)`;
+        ctx.lineWidth = 1.6;
+        ctx.shadowColor = `hsla(${hue}, 70%, 85%, 0.6)`;
+        ctx.shadowBlur = 4;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
     });
   }
 
