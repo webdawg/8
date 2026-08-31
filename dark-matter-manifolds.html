@@ -133,10 +133,10 @@
     m.jitterSeed = Math.random() * 100;
     Object.assign(m, opts);
   }
-  initMotion(leftManifold, { springK: 1.4, dampC: 1.9, jitterAccel: 0.09, coupleFromOther: 0.55 });
-  initMotion(rightManifold, { springK: 0.9, dampC: 1.3, jitterAccel: 0.14, coupleFromOther: 0.3 });
+  initMotion(leftManifold, { springK: 1.4, dampC: 1.9, jitterAccel: 0.05, coupleFromOther: 0.55 });
+  initMotion(rightManifold, { springK: 0.9, dampC: 1.3, jitterAccel: 0.08, coupleFromOther: 0.3 });
 
-  const IMPULSE_SCALE = 0.9;
+  const IMPULSE_SCALE = 1.4;
 
   function updateCoupledMotion(t, dt) {
     const pairs = [
@@ -165,7 +165,7 @@
   let dragManifold = null;
   let lastPointerX = 0;
   let lastPointerY = 0;
-  const INPUT_GAIN = 0.06;
+  const INPUT_GAIN = 0.28;
 
   function pointerToManifold(clientX) {
     return clientX < centerX ? leftManifold : rightManifold;
@@ -175,8 +175,11 @@
     dragManifold = pointerToManifold(e.clientX);
     lastPointerX = e.clientX;
     lastPointerY = e.clientY;
+    canvas.setPointerCapture(e.pointerId);
+    canvas.style.cursor = 'grabbing';
+    e.preventDefault();
   });
-  window.addEventListener('pointermove', (e) => {
+  canvas.addEventListener('pointermove', (e) => {
     if (!dragManifold) return;
     const dx = e.clientX - lastPointerX;
     const dy = e.clientY - lastPointerY;
@@ -184,9 +187,14 @@
     lastPointerY = e.clientY;
     dragManifold.inputFY += dx * INPUT_GAIN;
     dragManifold.inputFX += dy * INPUT_GAIN;
+    e.preventDefault();
   });
-  window.addEventListener('pointerup', () => { dragManifold = null; });
-  window.addEventListener('pointercancel', () => { dragManifold = null; });
+  function releaseDrag() {
+    dragManifold = null;
+    canvas.style.cursor = 'grab';
+  }
+  canvas.addEventListener('pointerup', releaseDrag);
+  canvas.addEventListener('pointercancel', releaseDrag);
 
   function warpZ(u, v, t, seed) {
     return (
