@@ -684,12 +684,19 @@
     const angleX = 0.06 * Math.sin(t * 0.15);
     const angleY = t * 0.02;
 
+    // the Tunnel's own span (leftBoundary..rightBoundary) is only ~2*gapHalf
+    // wide, but CHAIN_GAP_HALF has grown well past that — using it directly
+    // made the split consume the whole tube, leaving nothing to render at
+    // any normal window width. Cap the split so the Tunnel always keeps a
+    // visible stub on each side, however wide the Chains' own gap gets.
+    const splitHalf = Math.min(CHAIN_GAP_HALF, gapHalf * 0.5);
+
     const leftRings = [];
     const rightRings = [];
     for (let j = 0; j <= TUNNEL_RINGS; j++) {
       const s = j / TUNNEL_RINGS;
       const x = leftBoundary + s * (rightBoundary - leftBoundary);
-      if (Math.abs(x - centerX) < CHAIN_GAP_HALF) continue; // the split — nothing renders here
+      if (Math.abs(x - centerX) < splitHalf) continue; // the split — nothing renders here
       const worldX = x - centerX;
       // pinch toward each open mouth
       const pinch = 1 - 0.6 * Math.exp(-(((s - 0.5) * 3.4) ** 2));
