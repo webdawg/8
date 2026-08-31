@@ -355,7 +355,7 @@
     const rightAnchorX = rightBoundary + gapHalf * 2.6;
     const span = rightAnchorX - leftAnchorX;
     // a full one-way pass takes roughly 12s (calm) to 5s (fully aligned)
-    const passSpeed = 0.04 + intensity * 0.16;
+    const passSpeed = 0.044 + intensity * 0.176;
     trainPhase += passSpeed * Math.PI * dt;
 
     const hueAt = (x) => {
