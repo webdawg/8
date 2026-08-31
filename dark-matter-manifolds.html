@@ -977,8 +977,19 @@
 
     drawGapField();
     drawTunnel(t, entangle);
+
+    // the Afterbang Drips and Dark Matter Chains are pure 2D screen-space
+    // elements (see Scene Rotation in GLOSSARY.md — they don't turn with the
+    // scene), so they don't pass through project()/zoom automatically the
+    // way 3D content does. Scale them explicitly around the same center.
+    ctx.save();
+    ctx.translate(centerX, H / 2);
+    ctx.scale(zoom, zoom);
+    ctx.translate(-centerX, -H / 2);
     drawDrips(t);
     drawDarkMatterChains(0.016 * TIME_SCALE);
+    ctx.restore();
+
     drawManifold(leftManifold, t);
     drawManifold(rightManifold, t);
     drawCouplingForces(t);
