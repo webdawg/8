@@ -117,10 +117,11 @@
     );
   }
 
-  // ---- energy content living ON the right manifold's surface: lines that
-  // trace the gradient field of the manifold's own warp, so their vectors
-  // keep changing as they move forward across the curvature. The left
-  // manifold's content is the legs shape drawn further down instead. ----
+  // ---- the Contour Flow ----
+  // energy content living ON the right manifold's surface: lines that trace
+  // the gradient field of the manifold's own warp, so their vectors keep
+  // changing as they move forward across the curvature. The left manifold's
+  // content is the Ribbon Leg Field drawn further down instead. See GLOSSARY.md.
   const STREAMER_COUNT = 42;
   const TRAIL_LEN = 11;
   function spawnStreamer() {
@@ -128,6 +129,7 @@
   }
   rightManifold.streamers = Array.from({ length: STREAMER_COUNT }, spawnStreamer);
 
+  // draws the Left Manifold or the Right Manifold (m.side). See GLOSSARY.md.
   function drawManifold(m, t) {
     const dim = halfDim();
     const planeW = dim * 0.62;
@@ -265,7 +267,8 @@
     ctx.shadowBlur = 0;
   }
 
-  // ---- dark matter drips (the thin layer between the fields) ----
+  // ---- the Afterbang Drips ----
+  // Dark Matter's visualization: the thin layer between the fields. See GLOSSARY.md.
   const DRIP_COUNT = 160;
   const drips = [];
   function spawnDrip(atTop) {
