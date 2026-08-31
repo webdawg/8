@@ -292,6 +292,8 @@
     const angleX = 0.35 * Math.sin(t * 0.12 + legsField.rotSeedX) + 0.15;
     const angleY = legsField.spinDir * (t * 0.08 + legsField.rotSeedY);
 
+    const hipPoints = [];
+
     for (const legDef of legsField.legs) {
       // reach past the gap boundary on this leg's side so it visibly
       // touches the manifold it points toward
@@ -346,6 +348,71 @@
         const col = ring.map(row => row[k]);
         strokeLeg(col, legDef.hue);
       }
+
+      // centerline (no tube radius) used both to mark the hip joint and to
+      // drive the field-connection tendrils below
+      const centerline = [];
+      for (let j = 0; j <= legsField.lengthSegs; j++) {
+        const s = j / legsField.lengthSegs;
+        const c = legPath(leg, s);
+        const [rx, ry, rz] = rotatePoint(c.x, c.y, 0, angleX, angleY);
+        const [px, py] = project(rx, ry, rz);
+        centerline.push([anchorX + px, anchorY + py]);
+      }
+      hipPoints.push(centerline[0]);
+
+      // tendrils linking this leg back to the manifold it reaches toward;
+      // strength decays the further a point sits from that field
+      const boundary = legDef.dir < 0 ? leftBoundary : rightBoundary;
+      const fieldHue = legDef.dir < 0 ? leftManifold.hueBase : rightManifold.hueBase;
+      const decay = gapHalf * 2.2;
+      for (const [px, py] of centerline) {
+        const dist = Math.abs(px - boundary);
+        const strength = Math.exp(-dist / decay);
+        if (strength < 0.02) continue;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(boundary, py);
+        ctx.strokeStyle = `hsla(${fieldHue}, 85%, 75%, ${0.5 * strength})`;
+        ctx.lineWidth = 0.6 + strength * 0.8;
+        ctx.stroke();
+      }
+    }
+
+    // join the two legs together at the hip, then cut a single wall line
+    // through the middle of that joint as a barrier between them
+    if (hipPoints.length === 2) {
+      const [hx1, hy1] = hipPoints[0];
+      const [hx2, hy2] = hipPoints[1];
+
+      ctx.beginPath();
+      ctx.moveTo(hx1, hy1);
+      ctx.lineTo(hx2, hy2);
+      ctx.strokeStyle = 'rgba(230, 225, 255, 0.35)';
+      ctx.lineWidth = 1.2;
+      ctx.shadowColor = 'rgba(255, 255, 255, 0.4)';
+      ctx.shadowBlur = 4;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      const midX = (hx1 + hx2) / 2;
+      const midY = (hy1 + hy2) / 2;
+      const dx = hx2 - hx1;
+      const dy = hy2 - hy1;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = -dy / len;
+      const ny = dx / len;
+      const wallHalf = Math.max(20, dim * 0.05);
+
+      ctx.beginPath();
+      ctx.moveTo(midX - nx * wallHalf, midY - ny * wallHalf);
+      ctx.lineTo(midX + nx * wallHalf, midY + ny * wallHalf);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+      ctx.shadowBlur = 8;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
     }
   }
 
