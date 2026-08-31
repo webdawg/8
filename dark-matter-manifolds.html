@@ -557,8 +557,8 @@
   // driven off velocity (velX/velY), not angle — velocity spikes the instant
   // a drag starts, where angle only builds up gradually as the spring winds
   // up, so this is what makes the scroll react immediately instead of lagging
-  const chainL = { x: 0, scrollY: 0, wX: 0.5, wY: 0.12, sat: 1.8, baseSpeed: 16, driveSpeed: 140, rxWide: 2.4, rxNarrow: 1.3 };
-  const chainR = { x: 0, scrollY: 0, wX: 0.22, wY: 0.42, sat: 2.4, baseSpeed: 24, driveSpeed: 180, rxWide: 2.8, rxNarrow: 1.5 };
+  const chainL = { x: 0, scrollY: 0, wX: 0.5, wY: 0.12, sat: 1.8, baseSpeed: 16, driveSpeed: 140, rxWide: 1.3, rxNarrow: 0.6 };
+  const chainR = { x: 0, scrollY: 0, wX: 0.22, wY: 0.42, sat: 2.4, baseSpeed: 24, driveSpeed: 180, rxWide: 1.5, rxNarrow: 0.7 };
 
   function drawDarkMatterChains(dt) {
     chainL.x = centerX - 8;
@@ -581,7 +581,7 @@
         const midY = i * LINK_PERIOD + offset;
         const linkIndex = Math.round(chain.scrollY / LINK_PERIOD) + i;
         const rx = linkIndex % 2 === 0 ? chain.rxWide : chain.rxNarrow;
-        const ry = LINK_PERIOD / 2 + 2;
+        const ry = LINK_PERIOD * 1.05;
 
         ctx.beginPath();
         ctx.ellipse(chain.x, midY, rx, ry, 0, 0, Math.PI * 2);
